@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
+import 'package:timer_count_down/timer_controller.dart';
+import 'package:timer_count_down/timer_count_down.dart';
 
 void main() {
   runApp(TimerApp());
@@ -24,12 +27,43 @@ class TimerBody extends StatefulWidget {
   _TimerBodyState createState() => _TimerBodyState();
 }
 
+class MyTimer {
+  int index;
+  CountdownController cont;
+
+  MyTimer(int index, CountdownController cont) {
+    this.index = index;
+    this.cont = cont;
+  }
+
+  set setCont(CountdownController cont) {
+    this.cont = cont;
+  }
+
+  set setIndex(int index) {
+    this.index = index;
+  }
+
+  CountdownController get controller {
+    return cont;
+  }
+
+  int get getIndex {
+    return index;
+  }
+}
+
 class _TimerBodyState extends State<TimerBody> {
   var players = 0;
   var duration = 0;
   final _formKey = GlobalKey<FormState>();
   final playerController = TextEditingController();
   final durationController = TextEditingController();
+  List<MyTimer> timers = new List();
+  final CountdownController controller = CountdownController();
+
+  bool _isPause = true;
+  bool _isRestart = false;
 
   List colorList = [
     Colors.red,
@@ -62,6 +96,9 @@ class _TimerBodyState extends State<TimerBody> {
 
   @override
   Widget build(BuildContext context) {
+    // final IconData buttonIcon = _isRestart
+    //     ? Icons.refresh
+    //     : (_isPause ? Icons.pause : Icons.play_arrow);
     return Scaffold(
       appBar: AppBar(
         title: Text("Timer App"),
@@ -106,10 +143,10 @@ class _TimerBodyState extends State<TimerBody> {
                                   ),
                                   validator: (value) {
                                     if (int.tryParse(value) == null) {
-                                      return "Must input a number between 1-12";
+                                      return "Must input a number between 1-8";
                                     } else if (int.tryParse(value) < 1 ||
-                                        int.tryParse(value) > 12) {
-                                      return "Number must be between 1-12";
+                                        int.tryParse(value) > 8) {
+                                      return "Number must be between 1-8";
                                     } else {
                                       return null;
                                     }
@@ -136,6 +173,7 @@ class _TimerBodyState extends State<TimerBody> {
                                   onPressed: () {
                                     if (_formKey.currentState.validate()) {
                                       setState(() {
+                                        timers = <MyTimer>[];
                                         players =
                                             int.parse(playerController.text);
                                         duration =
@@ -155,17 +193,102 @@ class _TimerBodyState extends State<TimerBody> {
                 });
           },
         ),
+        actions: <Widget>[
+          IconButton(
+            icon: Icon(Icons.refresh),
+            onPressed: () {
+              controller.restart();
+              controller.pause();
+              setState(() {
+                _isPause = !_isPause;
+              });
+            },
+          )
+        ],
       ),
-      body: Column(
-          children: List.generate(
-              players,
-              (index) => Expanded(
-                  child: Container(
-                      // height:
-                      //     MediaQuery.of(context).size.height /
-                      //         players,
-                      color: colorList[index],
-                      child: Text("$index"))))),
+      body:
+          // GestureDetector(
+          //     child: Countdown(
+          //       controller: controller,
+          //       seconds: 5,
+          //       build: (_, double time) => Text(
+          //         time.toString(),
+          //         style: TextStyle(
+          //           fontSize: 100,
+          //         ),
+          //       ),
+          //       interval: Duration(milliseconds: 100),
+          //       onFinished: () {
+          //         print('Timer is done!');
+
+          //         setState(() {
+          //           _isRestart = true;
+          //         });
+          //       },
+          //     ),
+          //     onTap: () {
+          //       final isCompleted = controller.isCompleted;
+          //       isCompleted ? controller.restart() : controller.pause();
+
+          //       if (!isCompleted && !_isPause) {
+          //         controller.resume();
+          //       }
+
+          //       if (isCompleted) {
+          //         setState(() {
+          //           _isRestart = false;
+          //         });
+          //       } else {
+          //         setState(() {
+          //           _isPause = !_isPause;
+          //         });
+          //       }
+          //     }),
+
+          GestureDetector(
+              onTap: () {
+                print("Tapped");
+              },
+              child: Column(
+                  children: List.generate(players, (index) {
+                timers.add(MyTimer(index, CountdownController()));
+                return Expanded(
+                  child: Card(
+                    child: Column(children: <Widget>[
+                      Expanded(
+                        child: Container(
+                          // height:
+                          //     MediaQuery.of(context).size.height /
+                          //         players,
+                          width: double.infinity,
+                          color: colorList[index],
+                          child: Text("Player $index\nTime: 10",
+                              style: TextStyle(fontSize: 36)),
+                          alignment: Alignment.center,
+                        ),
+                      ),
+                      Expanded(
+                        child: Container(
+                          color: colorList[index],
+                          width: double.infinity,
+                          alignment: Alignment.center,
+                          child: Countdown(
+                            seconds: 20,
+                            build: (context, double time) => Text(
+                                time.toString(),
+                                style: TextStyle(fontSize: 36)),
+                            interval: Duration(milliseconds: 100),
+                            onFinished: () {
+                              print('Timer is done!');
+                            },
+                          ),
+                        ),
+                      ),
+                    ]),
+                  ),
+                );
+              }))),
+
       // body: MediaQuery.of(context).orientation == Orientation.portrait
       //     ? portraitMode(context, )
       //     : landscapeMode(),
