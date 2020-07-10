@@ -143,7 +143,7 @@ class _TimerBodyState extends State<TimerBody> {
       appBar: AppBar(
         title: Text("Timer App"),
         leading: IconButton(
-          icon: Icon(Icons.ac_unit),
+          icon: Icon(Icons.change_history),
           onPressed: () {
             showDialog(
                 context: context,
@@ -227,9 +227,7 @@ class _TimerBodyState extends State<TimerBody> {
                                         for (var i = 0; i < players; i++) {
                                           timers[i].setAlive = true;
                                           timers[i].setNextPlayer =
-                                              i + 1 < players
-                                                  ? i + 1
-                                                  : 0;
+                                              i + 1 < players ? i + 1 : 0;
                                         }
                                         // timers.value.clear();
                                         // print(timers.value.length);
