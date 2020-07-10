@@ -30,10 +30,16 @@ class TimerBody extends StatefulWidget {
 class MyTimer {
   int index;
   CountdownController cont;
+  int nextPlayer;
 
-  MyTimer(int index, CountdownController cont) {
+  MyTimer(int index, CountdownController cont, int nextPlayer) {
     this.index = index;
     this.cont = cont;
+    this.nextPlayer = nextPlayer;
+  }
+
+  String toString() {
+    return "$index connects to $nextPlayer";
   }
 
   set setCont(CountdownController cont) {
@@ -44,6 +50,10 @@ class MyTimer {
     this.index = index;
   }
 
+  set setNextPlayer(int nextPlayer) {
+    this.nextPlayer = nextPlayer;
+  }
+
   CountdownController get controller {
     return cont;
   }
@@ -51,17 +61,23 @@ class MyTimer {
   int get getIndex {
     return index;
   }
+
+  int get getNextPlayer {
+    return nextPlayer;
+  }
 }
 
 class _TimerBodyState extends State<TimerBody> {
   var players = 0;
-  var duration = 0;
+  double duration = 0;
   final _formKey = GlobalKey<FormState>();
   final playerController = TextEditingController();
   final durationController = TextEditingController();
-  List<MyTimer> timers = new List();
+  //final List<MyTimer> timers = new List();
+  final ValueNotifier<List<MyTimer>> timers =
+      ValueNotifier<List<MyTimer>>(new List());
   final CountdownController controller = CountdownController();
-
+  int currentIndex = 0;
   bool _isPause = true;
   bool _isRestart = false;
 
@@ -96,6 +112,7 @@ class _TimerBodyState extends State<TimerBody> {
 
   @override
   Widget build(BuildContext context) {
+    var firstTime = true;
     // final IconData buttonIcon = _isRestart
     //     ? Icons.refresh
     //     : (_isPause ? Icons.pause : Icons.play_arrow);
@@ -161,7 +178,7 @@ class _TimerBodyState extends State<TimerBody> {
                                     hintText: "Duration (minutes)",
                                   ),
                                   validator: (value) =>
-                                      int.tryParse(value) == null
+                                      double.tryParse(value) == null
                                           ? "Must be a number"
                                           : null,
                                 ),
@@ -173,11 +190,31 @@ class _TimerBodyState extends State<TimerBody> {
                                   onPressed: () {
                                     if (_formKey.currentState.validate()) {
                                       setState(() {
-                                        timers = <MyTimer>[];
+                                        //timers = <MyTimer>[];
                                         players =
                                             int.parse(playerController.text);
-                                        duration =
-                                            int.parse(durationController.text);
+                                        duration = double.parse(
+                                            durationController.text);
+                                        currentIndex = players - 1;
+                                        timers.value.clear();
+                                        print(timers.value.length);
+                                        for (var index = 0;
+                                            index < players;
+                                            index++) {
+                                          var nextPlayer = index + 1 < players
+                                              ? index + 1
+                                              : 0;
+                                          var p = MyTimer(
+                                              index,
+                                              CountdownController(),
+                                              nextPlayer);
+                                          //if (index != 0) {
+                                          //p.cont.pause();
+                                          //}
+                                          print(p);
+                                          timers.value.add(p);
+                                        }
+                                        print(timers.value.length);
                                       });
                                       Navigator.of(context).pop();
                                     }
@@ -197,11 +234,11 @@ class _TimerBodyState extends State<TimerBody> {
           IconButton(
             icon: Icon(Icons.refresh),
             onPressed: () {
-              controller.restart();
-              controller.pause();
-              setState(() {
-                _isPause = !_isPause;
-              });
+              for (var player in timers.value) {
+                player.cont.restart();
+                player.cont.pause();
+              }
+              currentIndex = players - 1;
             },
           )
         ],
@@ -246,12 +283,32 @@ class _TimerBodyState extends State<TimerBody> {
           //     }),
 
           GestureDetector(
-              onTap: () {
-                print("Tapped");
-              },
-              child: Column(
-                  children: List.generate(players, (index) {
-                timers.add(MyTimer(index, CountdownController()));
+        onTap: () {
+          setState(() {
+            print(timers.value.length);
+            print("Stopping timer: $currentIndex");
+            timers.value[currentIndex].cont.pause();
+            currentIndex = timers.value[currentIndex].nextPlayer;
+            print("Starting timer: $currentIndex");
+            timers.value[currentIndex].cont.resume();
+          });
+        },
+        child: ValueListenableBuilder(
+          builder: (context, value, _) {
+            return Column(
+              children: List.generate(players, (index) {
+                var p = timers.value[index];
+                //p.cont.pause();
+                // if (firstTime) {
+                //   var nextPlayer = index + 1 < players ? index + 1 : 0;
+                //   var p = MyTimer(index, CountdownController(), nextPlayer);
+                //   //if (index != 0) {
+                //   //p.cont.pause();
+                //   //}
+                //   print(p);
+                //   timers.add(p);
+                // }
+
                 return Expanded(
                   child: Card(
                     child: Column(children: <Widget>[
@@ -262,7 +319,7 @@ class _TimerBodyState extends State<TimerBody> {
                           //         players,
                           width: double.infinity,
                           color: colorList[index],
-                          child: Text("Player $index\nTime: 10",
+                          child: Text("Player ${index + 1}",
                               style: TextStyle(fontSize: 36)),
                           alignment: Alignment.center,
                         ),
@@ -273,12 +330,23 @@ class _TimerBodyState extends State<TimerBody> {
                           width: double.infinity,
                           alignment: Alignment.center,
                           child: Countdown(
-                            seconds: 20,
+                            controller: p.cont,
+                            seconds: (duration * 60).ceil(),
                             build: (context, double time) => Text(
                                 time.toString(),
                                 style: TextStyle(fontSize: 36)),
                             interval: Duration(milliseconds: 100),
                             onFinished: () {
+                              setState(() {
+                                if (p.index == 0) {
+                                  timers.value[timers.value.length - 1]
+                                          .nextPlayer =
+                                      timers.value[p.index].nextPlayer;
+                                } else {
+                                  timers.value[p.index - 1].nextPlayer =
+                                      timers.value[p.index].nextPlayer;
+                                }
+                              });
                               print('Timer is done!');
                             },
                           ),
@@ -287,7 +355,12 @@ class _TimerBodyState extends State<TimerBody> {
                     ]),
                   ),
                 );
-              }))),
+              }),
+            );
+          },
+          valueListenable: timers,
+        ),
+      ),
 
       // body: MediaQuery.of(context).orientation == Orientation.portrait
       //     ? portraitMode(context, )
