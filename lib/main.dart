@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:timer_count_down/timer_controller.dart';
-import 'package:timer_count_down/timer_count_down.dart';
+import 'timer.dart';
 
 void main() {
   runApp(TimerApp());
@@ -110,7 +109,7 @@ class _TimerBodyState extends State<TimerBody> {
     return MyTimer(index, CountdownController(), index, index, false);
   });
   int currentIndex = 0;
-
+  bool started = false;
   // There is a max of 8 players and each will have their won color
   List colorList = [
     Colors.red,
@@ -282,118 +281,122 @@ class _TimerBodyState extends State<TimerBody> {
       body: OrientationBuilder(builder: (context, orientation) {
         //if (Orientation.portrait == orientation) {
         return GestureDetector(
-          onTap: () {
-            setState(() {
-              // pauses the current timer
-              // then resumes whichever is next
-              timers[currentIndex].cont.pause();
-              currentIndex = timers[currentIndex].nextPlayer;
-              timers[currentIndex].cont.resume();
-            });
-          },
-          child: orientation == Orientation.portrait
-              ? Column(
-                  children: timers.where((t) => t.alive).map((timer) {
-                    // creates iterable of timers that are alive
-                    // then passes to map so they can have widgets created
-                    var index = timers.indexOf(timer);
-                    return Expanded(
-                      child: Card(
-                        child: Column(children: <Widget>[
-                          Expanded(
-                            child: Container(
-                              width: double.infinity,
-                              color: colorList[index],
-                              child: Text("Player ${index + 1}",
-                                  style: TextStyle(fontSize: 36)),
-                              alignment: Alignment.center,
-                            ),
-                          ),
-                          Expanded(
-                            child: Container(
-                              color: colorList[index],
-                              width: double.infinity,
-                              alignment: Alignment.center,
-                              child: Countdown(
-                                // here is the countdown timer logic (comes from the timer_count_down library)
-                                controller: timer.cont,
-                                seconds: (duration * 60).ceil(),
-                                build: (context, double time) => Text(
-                                    time.toString(),
+            onTap: () {
+              print("\n\nEEEEEEEEEEEEEEEEEEE\n\n");
+              setState(() {
+                if (!started && players != 0 && duration != 0) {
+                  print("Set state");
+                  started = true;
+                }
+                // pauses the current timer
+                // then resumes whichever is next
+                timers[currentIndex].cont.pause();
+                currentIndex = timers[currentIndex].nextPlayer;
+                timers[currentIndex].cont.resume();
+              });
+            },
+            child: orientation == Orientation.portrait
+                ? Column(
+                    children: timers.where((t) => t.alive).map((timer) {
+                      // creates iterable of timers that are alive
+                      // then passes to map so they can have widgets created
+                      var index = timers.indexOf(timer);
+                      return Expanded(
+                        child: Card(
+                          child: Column(children: <Widget>[
+                            Expanded(
+                              child: Container(
+                                width: double.infinity,
+                                color: colorList[index],
+                                child: Text("Player ${index + 1}",
                                     style: TextStyle(fontSize: 36)),
-                                interval: Duration(milliseconds: 100),
-                                onFinished: () {
-                                  // When a timer finishes the nextPlayer and hasMe are now incorrect
-                                  // This updates the nextPlayer and hasMe to be correct
-                                  // It also
-                                  setState(() {
-                                    timers[timer.hasMe].nextPlayer =
-                                        timer.nextPlayer;
-                                    timers[timer.nextPlayer].hasMe =
-                                        timer.hasMe;
-                                    //timers[currentIndex].cont.pause();
-                                    currentIndex =
-                                        timers[currentIndex].nextPlayer;
-                                    //timers[currentIndex].cont.resume();
-                                    timers[timer.nextPlayer].cont.resume();
-                                  });
-                                },
+                                alignment: Alignment.center,
                               ),
                             ),
-                          ),
-                        ]),
-                      ),
-                    );
-                  }).toList(),
-                )
-              : Row(
-                  children: timers.where((t) => t.alive).map((timer) {
-                    var index = timers.indexOf(timer);
-                    return Expanded(
-                      child: Card(
-                        child: Column(children: <Widget>[
-                          Expanded(
-                            child: Container(
-                              color: colorList[index],
-                              child: Text("Player ${index + 1}",
-                                  style: TextStyle(fontSize: 36)),
-                              alignment: Alignment.center,
-                            ),
-                          ),
-                          Expanded(
-                            child: Container(
-                              color: colorList[index],
-                              width: double.infinity,
-                              alignment: Alignment.center,
-                              child: Countdown(
-                                controller: timer.cont,
-                                seconds: (duration * 60).ceil(),
-                                build: (context, double time) => Text(
-                                    time.toString(),
-                                    style: TextStyle(fontSize: 36)),
-                                interval: Duration(milliseconds: 100),
-                                onFinished: () {
-                                  setState(() {
-                                    timers[timer.hasMe].nextPlayer =
-                                        timer.nextPlayer;
-                                    timers[timer.nextPlayer].hasMe =
-                                        timer.hasMe;
-                                    //timers[currentIndex].cont.pause();
-                                    currentIndex =
-                                        timers[currentIndex].nextPlayer;
-                                    //timers[currentIndex].cont.resume();
-                                    timers[timer.nextPlayer].cont.resume();
-                                  });
-                                },
+                            Expanded(
+                              child: Container(
+                                color: colorList[index],
+                                width: double.infinity,
+                                alignment: Alignment.center,
+                                child: Countdown(
+                                  // here is the countdown timer logic (comes from the timer_count_down library)
+                                  controller: timer.cont,
+                                  seconds: (duration * 60).ceil(),
+                                  build: (context, double time) => Text(
+                                      time.toString(),
+                                      style: TextStyle(fontSize: 36)),
+                                  interval: Duration(milliseconds: 100),
+                                  onFinished: () {
+                                    // When a timer finishes the nextPlayer and hasMe are now incorrect
+                                    // This updates the nextPlayer and hasMe to be correct
+                                    // It also
+                                    setState(() {
+                                      timers[timer.hasMe].nextPlayer =
+                                          timer.nextPlayer;
+                                      timers[timer.nextPlayer].hasMe =
+                                          timer.hasMe;
+                                      //timers[currentIndex].cont.pause();
+                                      currentIndex =
+                                          timers[currentIndex].nextPlayer;
+                                      //timers[currentIndex].cont.resume();
+                                      timers[timer.nextPlayer].cont.resume();
+                                    });
+                                  },
+                                ),
                               ),
                             ),
-                          ),
-                        ]),
-                      ),
-                    );
-                  }).toList(),
-                ),
-        );
+                          ]),
+                        ),
+                      );
+                    }).toList(),
+                  )
+                : Row(
+                    children: timers.where((t) => t.alive).map((timer) {
+                      var index = timers.indexOf(timer);
+                      return Expanded(
+                        child: Card(
+                          child: Column(children: <Widget>[
+                            Expanded(
+                              child: Container(
+                                color: colorList[index],
+                                child: Text("Player ${index + 1}",
+                                    style: TextStyle(fontSize: 36)),
+                                alignment: Alignment.center,
+                              ),
+                            ),
+                            Expanded(
+                              child: Container(
+                                color: colorList[index],
+                                width: double.infinity,
+                                alignment: Alignment.center,
+                                child: Countdown(
+                                  controller: timer.cont,
+                                  seconds: (duration * 60).ceil(),
+                                  build: (context, double time) => Text(
+                                      time.toString(),
+                                      style: TextStyle(fontSize: 36)),
+                                  interval: Duration(milliseconds: 100),
+                                  onFinished: () {
+                                    setState(() {
+                                      timers[timer.hasMe].nextPlayer =
+                                          timer.nextPlayer;
+                                      timers[timer.nextPlayer].hasMe =
+                                          timer.hasMe;
+                                      //timers[currentIndex].cont.pause();
+                                      currentIndex =
+                                          timers[currentIndex].nextPlayer;
+                                      //timers[currentIndex].cont.resume();
+                                      timers[timer.nextPlayer].cont.resume();
+                                    });
+                                  },
+                                ),
+                              ),
+                            ),
+                          ]),
+                        ),
+                      );
+                    }).toList(),
+                  ));
       }),
     );
   }
