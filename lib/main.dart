@@ -93,7 +93,7 @@ class _TimerBodyState extends State<TimerBody> {
   final _formKey = GlobalKey<FormState>();
   final playerController = TextEditingController();
   final durationController = TextEditingController();
-  final CountdownController controller = CountdownController();
+  //final CountdownController controller = CountdownController();
   final List<MyTimer> timers = List.generate(maxPlayers, (index) {
     return MyTimer(index, CountdownController(), index, index, false);
   });
@@ -205,6 +205,7 @@ class _TimerBodyState extends State<TimerBody> {
                                         }
                                         for (var i = 0; i < players; i++) {
                                           timers[i].setAlive = true;
+                                          //timers[i].cont.pause();
                                           timers[i].setNextPlayer =
                                               i + 1 < players ? i + 1 : 0;
                                           if (i == 0) {
