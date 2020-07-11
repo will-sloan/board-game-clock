@@ -26,6 +26,10 @@ class TimerBody extends StatefulWidget {
 }
 
 class MyTimer {
+  /*
+  MyTimer is used later in a List<MyTimer>
+  Used to keep track of each controller and to know which user to go to onTap or when a timer finishes
+  */
   int index;
   CountdownController cont;
   int nextPlayer;
@@ -87,18 +91,27 @@ class MyTimer {
 }
 
 class _TimerBodyState extends State<TimerBody> {
+  // The max amount of players that work without running out of screen room
   static final maxPlayers = 8;
+  // Valyes that will be changed by the form
   var players = 0;
   double duration = 0;
+
+  // Used for taking input from the user
   final _formKey = GlobalKey<FormState>();
   final playerController = TextEditingController();
   final durationController = TextEditingController();
-  //final CountdownController controller = CountdownController();
+
+  // Generates 8 players each time, and sets them to some default parameters
+  // When the user sets how many players they want, the setState will change
+  // the alive value of the inputted amount of players
+  // Ex: Input of 4, the first 4 in this list will later have their alive = true
   final List<MyTimer> timers = List.generate(maxPlayers, (index) {
     return MyTimer(index, CountdownController(), index, index, false);
   });
   int currentIndex = 0;
 
+  // There is a max of 8 players and each will have their won color
   List colorList = [
     Colors.red,
     Colors.blue,
@@ -108,10 +121,6 @@ class _TimerBodyState extends State<TimerBody> {
     Colors.brown,
     Colors.yellow,
     Colors.indigo,
-    Colors.lime,
-    Colors.teal,
-    Colors.cyan,
-    Colors.pink
   ];
 
   @override
@@ -133,6 +142,7 @@ class _TimerBodyState extends State<TimerBody> {
             showDialog(
                 context: context,
                 builder: (BuildContext context) {
+                  // The form for taking user input
                   return AlertDialog(
                     content: Stack(
                       overflow: Overflow.visible,
@@ -193,16 +203,23 @@ class _TimerBodyState extends State<TimerBody> {
                                   child: Text("Submit"),
                                   onPressed: () {
                                     if (_formKey.currentState.validate()) {
+                                      // Since there is valid input, we have to change
+                                      // the amount of timers entered to alive
+                                      // (only alive timers are created into widgets)
                                       setState(() {
                                         players =
                                             int.parse(playerController.text);
                                         duration = double.parse(
                                             durationController.text);
                                         currentIndex = players - 1;
+                                        // resets each timer
                                         for (var i = 0; i < 8; i++) {
                                           timers[i].setAlive = false;
                                           timers[i].setNextPlayer = i;
                                         }
+                                        // Actually sets them to alive
+                                        // Also sets which player will come next
+                                        // and who has each player
                                         for (var i = 0; i < players; i++) {
                                           timers[i].setAlive = true;
                                           //timers[i].cont.pause();
@@ -215,6 +232,7 @@ class _TimerBodyState extends State<TimerBody> {
                                           }
                                         }
                                       });
+                                      // closes the window
                                       Navigator.of(context).pop();
                                     }
                                   },
@@ -233,6 +251,8 @@ class _TimerBodyState extends State<TimerBody> {
           IconButton(
             icon: Icon(Icons.refresh),
             onPressed: () {
+              // Does the smae thing as the Form except it keeps the
+              // duration and the amount of players the same
               setState(() {
                 for (var i = 0; i < 8; i++) {
                   timers[i].setAlive = false;
@@ -248,10 +268,12 @@ class _TimerBodyState extends State<TimerBody> {
                   }
                 }
               });
+              // Resets all the timers and pauses (so they don't immediately start counting down)
               for (var player in timers) {
                 player.cont.restart();
                 player.cont.pause();
               }
+              // This makes it so the first tap starts the player 1 timer (rather than player 2)
               currentIndex = players - 1;
             },
           )
@@ -262,17 +284,18 @@ class _TimerBodyState extends State<TimerBody> {
         return GestureDetector(
           onTap: () {
             setState(() {
-              print(timers.length);
-              print("Stopping timer: $currentIndex");
+              // pauses the current timer
+              // then resumes whichever is next
               timers[currentIndex].cont.pause();
               currentIndex = timers[currentIndex].nextPlayer;
-              print("Starting timer: $currentIndex");
               timers[currentIndex].cont.resume();
             });
           },
           child: orientation == Orientation.portrait
               ? Column(
                   children: timers.where((t) => t.alive).map((timer) {
+                    // creates iterable of timers that are alive
+                    // then passes to map so they can have widgets created
                     var index = timers.indexOf(timer);
                     return Expanded(
                       child: Card(
@@ -292,6 +315,7 @@ class _TimerBodyState extends State<TimerBody> {
                               width: double.infinity,
                               alignment: Alignment.center,
                               child: Countdown(
+                                // here is the countdown timer logic (comes from the timer_count_down library)
                                 controller: timer.cont,
                                 seconds: (duration * 60).ceil(),
                                 build: (context, double time) => Text(
@@ -299,38 +323,20 @@ class _TimerBodyState extends State<TimerBody> {
                                     style: TextStyle(fontSize: 36)),
                                 interval: Duration(milliseconds: 100),
                                 onFinished: () {
-                                  print(timers);
+                                  // When a timer finishes the nextPlayer and hasMe are now incorrect
+                                  // This updates the nextPlayer and hasMe to be correct
+                                  // It also
                                   setState(() {
-                                    // for (var i in timers) {
-                                    //   if
-                                    // }
                                     timers[timer.hasMe].nextPlayer =
                                         timer.nextPlayer;
                                     timers[timer.nextPlayer].hasMe =
                                         timer.hasMe;
-                                    //timer.alive = false;
-                                    // if (index == 0) {
-                                    //   print("In index 0");
-                                    //   timers[players - 1].nextPlayer =
-                                    //       timers[index].nextPlayer;
-                                    //   print(timers);
-                                    // } else {
-                                    //   print("In else");
-                                    //   timers[index - 1].nextPlayer =
-                                    //       timers[index].nextPlayer;
-                                    // }
-                                    print(timers.length);
-                                    print("Stopping timer: $currentIndex");
-                                    timers[currentIndex].cont.pause();
+                                    //timers[currentIndex].cont.pause();
                                     currentIndex =
                                         timers[currentIndex].nextPlayer;
-                                    print("Starting timer: $currentIndex");
-                                    timers[currentIndex].cont.resume();
+                                    //timers[currentIndex].cont.resume();
                                     timers[timer.nextPlayer].cont.resume();
-                                    //timer.setAlive = false;
                                   });
-                                  print(timers);
-                                  print('Timer is done!');
                                 },
                               ),
                             ),
@@ -372,8 +378,12 @@ class _TimerBodyState extends State<TimerBody> {
                                         timer.nextPlayer;
                                     timers[timer.nextPlayer].hasMe =
                                         timer.hasMe;
+                                    //timers[currentIndex].cont.pause();
+                                    currentIndex =
+                                        timers[currentIndex].nextPlayer;
+                                    //timers[currentIndex].cont.resume();
+                                    timers[timer.nextPlayer].cont.resume();
                                   });
-                                  print('Timer is done!');
                                 },
                               ),
                             ),
